@@ -24,4 +24,4 @@
 
 
 ### 七、MVP視窗示意：
-![Windows - MVP](./MVP視窗示意.png)
+![Windows - MVP](./python_windows_mvp.png)
