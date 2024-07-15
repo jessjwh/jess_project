@@ -12,11 +12,11 @@ import seaborn as sns
 
 # 確認當前工作目錄
 current_dir = os.getcwd()
-print(f"Current directory: {current_dir}")
+# print(f"Current directory: {current_dir}")
 
 # 列出目錄中的文件
 files = os.listdir(current_dir)
-print(f"Files in current directory: {files}")
+# print(f"Files in current directory: {files}")
 
 # 指定正確的文件路徑
 file_path = '/Users/jesshuang/Documents/GitHub/jess_project/the_happiness_project/World Happiness Report_new.csv'
@@ -24,9 +24,9 @@ file_path = '/Users/jesshuang/Documents/GitHub/jess_project/the_happiness_projec
 # 檢查文件是否存在
 if os.path.exists(file_path):
     # 讀取 CSV 文件
-    happiness_report = pd.read_csv(file_path)
+    data = pd.read_csv(file_path)
     # 顯示數據框的前幾行
-    print(happiness_report.head())
+    print(data.head())
 else:
     print(f"File not found: {file_path}")
 
@@ -52,7 +52,7 @@ tree.configure(xscroll=h_scrollbar.set)
 h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
 # 定義列
-tree["columns"] = list(happiness_report.columns)
+tree["columns"] = list(data.columns)
 tree["show"] = "headings"
 
 # 設置列標題
@@ -60,7 +60,7 @@ for col in tree["columns"]:
     tree.heading(col, text=col)
 
 # 添加數據到樹狀視圖
-for index, row in happiness_report.iterrows():
+for index, row in data.iterrows():
     tree.insert("", "end", values=list(row))
 
 # 創建下半部分的圖形顯示區域
@@ -83,19 +83,20 @@ ax = fig.add_subplot(111)
 canvas = FigureCanvasTkAgg(fig, master=plot_frame)
 canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+sns.set(style="whitegrid")
+
 # 更新圖形
 def update_plot(event):
     selected_col = selected_column.get()
-    if selected_col in happiness_report.columns:
-        ax.clear()
-        grouped = happiness_report.groupby('Region')[selected_col].mean().reset_index()
-        ax.plot(grouped['Region'], grouped[selected_col], marker='o')
-        ax.set_title(f'Region vs {selected_col}')
-        ax.set_xlabel('Region')
-        ax.set_ylabel(selected_col)
-        ax.tick_params(axis='x', rotation=90)  # 旋轉 x 軸標籤以便於閱讀
-        ax.grid(True)  # 顯示格線
-        canvas.draw()
+    if selected_col in data.columns:
+        plt.figure(figsize=(6,6), dpi=120)
+        sns.scatterplot(data=data, x=selected_col, y='Life Ladder', hue='Region', palette='pastel')
+        plt.title(f'Life Ladder vs {selected_col}')
+        plt.xlabel(selected_col)
+        plt.ylabel('Life Ladder')
+        plt.legend(loc='upper left', fontsize='8')
+        plt.show()
+
 
 # 綁定選擇事件
 column_menu.bind("<<ComboboxSelected>>", update_plot)
