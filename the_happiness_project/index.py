@@ -28,33 +28,27 @@ else:
 root = tk.Tk()
 root.title("What makes you happy?")
 
+titleFrame = ttk.Frame(root)
+title_label = ttk.Label(root, text="What is Happiness?", font=("Helvetica", 24))
+title_label.pack(pady=30)
+titleFrame.pack(padx=100,pady=(0,10))
+
 # 創建下半部分的圖形顯示區域
 plot_frame = tk.Frame(root)
 plot_frame.pack(fill=tk.BOTH, expand=True)
 
 # 創建下拉式選單
 selected_column = tk.StringVar()
-column_menu = ttk.Combobox(plot_frame, textvariable=selected_column, width=60)
+column_menu = ttk.Combobox(plot_frame, textvariable=selected_column, width=40)
 
 column_menu['values'] = ['Life Ladder', 'Log GDP Per Capita', 'Social Support', 'Healthy Life Expectancy At Birth',	'Freedom To Make Life Choices',	'Generosity','Perceptions Of Corruption', 'Positive Affect', 'Negative Affect', 'Confidence In National Government']
-
-column_menu.heading('Life Ladder', text='Happiness')
-column_menu.heading('Log GDP Per Capita', text='GDP')
-column_menu.heading('Social Support', text='Social Support')
-column_menu.heading('Healthy Life Expectancy At Birth', text='Health Expectancy')
-column_menu.heading('Freedom To Make Life Choices', text='Freedom')
-column_menu.heading('Generosity', text='Generosity')
-column_menu.heading('Perceptions Of Corruption', text='Corruption')
-column_menu.heading('Positive Affect', text='Positive Feelings')
-column_menu.heading('Negative Affect', text='Negative Fellings')
-column_menu.heading('Confidence In National Government', text='Government')
 
 
 column_menu.set('Select a factor')
 column_menu.pack()
 
 # 創建一個畫布以顯示圖形
-fig = Figure(figsize=(6, 6), dpi=120)
+fig = Figure(figsize=(6, 4), dpi=180)
 ax = fig.add_subplot(111)
 canvas = FigureCanvasTkAgg(fig, master=plot_frame)
 canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
