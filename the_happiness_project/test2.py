@@ -8,24 +8,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Load the custom dataset
 data_path = '/Users/jesshuang/Documents/GitHub/jess_window/project/the_happiness_project/World Happiness Report_new.csv'
-custom_data = pd.read_csv(data_path)
-
-# List of columns to plot against Life Ladder
-columns_to_plot = [
-    'Log GDP Per Capita', 'Social Support', 'Healthy Life Expectancy At Birth',
-    'Freedom To Make Life Choices', 'Generosity', 'Perceptions Of Corruption',
-    'Positive Affect', 'Negative Affect', 'Confidence In National Government'
-]
-
-# Set the aesthetics for the plots
-sns.set(style="whitegrid")
+custom_data = pd.read_csv(data_path).to_dict(orient='records')
 
 class Window(ThemedTk):
     def __init__(self, theme:str='arc', **kwargs):
         super().__init__(theme=theme, **kwargs)
         self.title("World Happiness Report")
         try:
-            self.__data = custom_data.to_dict(orient='records')
+            self.__data = custom_data
         except Exception as error:
             messagebox.showwarning(title="Error", message=str(error))
 
@@ -40,7 +30,7 @@ class Window(ThemedTk):
         ttk.Label(mainFrame, text="World Happiness Report Data", font=('arial',16)).pack(pady=(20,10))
 
         tableFrame = ttk.Frame(mainFrame)
-        columns = list(custom_data.columns)
+        columns = list(custom_data[0].keys())  # Extract columns from dataset
         tree = ttk.Treeview(tableFrame, columns=columns, show='headings')
 
         for column in columns:
@@ -55,11 +45,13 @@ class Window(ThemedTk):
 
         tree.grid(row=0, column=0, sticky='nsew')
 
-        scrollbar = ttk.Scrollbar(tableFrame, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscroll=scrollbar.set)
-        scrollbar.grid(row=0, column=1, sticky='ns')
-
         tableFrame.pack(ipadx=20, ipady=20)
+
+        # Replace scrollbar with a dropdown menu
+        self.selected_columns = tk.StringVar(value=columns)
+        dropdown = ttk.Combobox(tableFrame, textvariable=self.selected_columns, values=columns, state="readonly")
+        dropdown.grid(row=1, column=0, sticky='ew')
+        dropdown.bind('<<ComboboxSelected>>', self.item_selected_dropdown)
 
         self.scatterPlotFrame = ScatterPlotFrame(mainFrame)
         self.scatterPlotFrame.pack()
@@ -67,11 +59,16 @@ class Window(ThemedTk):
 
     def item_selected(self, event):
         tree = event.widget
-        selected_items = tree.selection()
-        if selected_items:
-            item = tree.item(selected_items[0])
-            record = dict(zip(custom_data.columns, item['values']))
-            self.scatterPlotFrame.infos = record
+        records = []
+        for selected_item in tree.selection()[:3]:
+            item = tree.item(selected_item)
+            record = item['values']
+            records.append(record)
+        self.scatterPlotFrame.infos = records
+
+    def item_selected_dropdown(self, event):
+        selected_column = self.selected_columns.get()
+        self.scatterPlotFrame.selected_column = selected_column
 
 class ScatterPlotFrame(ttk.Frame):
     def __init__(self, master: Misc, **kwargs):
@@ -86,24 +83,43 @@ class ScatterPlotFrame(ttk.Frame):
         return None
 
     @infos.setter
-    def infos(self, data: dict) -> None:
+    def infos(self, datas: list[list]) -> None:
         for w in self.winfo_children():
             w.destroy()
 
-        df = custom_data
+        if not hasattr(self, 'selected_column'):
+            self.selected_column = 'Log GDP Per Capita'
 
-        for column in columns_to_plot:
-            figure = plt.figure(figsize=(6, 6), dpi=120)
-            sns.scatterplot(data=df, x='Life Ladder', y=column, hue='Region', palette='pastel')
-            plt.axvline(data['Life Ladder'], color='r', linestyle='--')
-            plt.title(f'{column} vs Life Ladder')
-            plt.xlabel('Life Ladder')
-            plt.ylabel(column)
-            plt.legend(loc='upper left', fontsize='8')
+        for data in datas:
+            fig, ax = plt.subplots(figsize=(5, 4))
+            x = range(len(data))
+            y = data
+            ax.scatter(x, y)
 
-            canvas = FigureCanvasTkAgg(figure, self)
+            ax.set_xticks(x)
+            ax.set_xticklabels(custom_data[0].keys(), rotation=90)
+            ax.set_title('Selected Data Points')
+            ax.set_xlabel('Attributes')
+            ax.set_ylabel('Values')
+
+            canvas = FigureCanvasTkAgg(fig, master=self)
             canvas.draw()
             canvas.get_tk_widget().pack(side='left', expand=True, fill='both')
+
+        self.plot_scatter()
+
+    def plot_scatter(self):
+        fig, ax = plt.subplots(figsize=(6, 6), dpi=120)
+        data = pd.read_csv(data_path)
+        sns.scatterplot(data=data, x=self.selected_column, y='Life Ladder', hue='Region', palette='pastel', ax=ax)
+        ax.set_title(f'Life Ladder vs {self.selected_column}')
+        ax.set_xlabel(self.selected_column)
+        ax.set_ylabel('Life Ladder')
+        ax.legend(loc='upper left', fontsize='8')
+        
+        canvas = FigureCanvasTkAgg(fig, master=self)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side='left', expand=True, fill='both')
 
 def main():
     def on_closing():
