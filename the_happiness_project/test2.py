@@ -9,59 +9,71 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image, ImageTk
 
-# 指定正確的文件路徑
+# Load the data
 file_path = '/Users/jesshuang/Documents/GitHub/jess_project/the_happiness_project/World Happiness Report_new.csv'
 
-# 檢查文件是否存在
 if os.path.exists(file_path):
-    # 讀取 CSV 文件
     data = pd.read_csv(file_path)
-    # 顯示數據框的前幾行
     print(data.head())
 else:
     print(f"File not found: {file_path}")
 
-# 創建 Tkinter 主窗口
+# Create the main Tkinter window
 root = tk.Tk()
 root.title("The Happiness Project")
 
+# Title label
 titleFrame = ttk.Frame(root)
 title_label = ttk.Label(root, text="WHAT Makes You Happy?", justify="center", font=("Helvetica", 20))
 title_label.pack(pady=20)
 titleFrame.pack(padx=100, pady=(0, 10))
 
-# 插入 PNG 圖像
-img_path = "/Users/jesshuang/Documents/GitHub/jess_project/the_happiness_project/img.png"  # 使用您的 PNG 圖像的路徑
+# Insert and resize the PNG image
+img_path = "/Users/jesshuang/Documents/GitHub/jess_project/the_happiness_project/img.png"
 image = Image.open(img_path)
-image = image.resize((140, 140))  # 調整圖像大小，您可以根據需要設置寬度和高度
+image = image.resize((140, 140))
 photo = ImageTk.PhotoImage(image)
 
 img_label = tk.Label(root, image=photo)
 img_label.pack(pady=5)
 
+# Subtitle label
 titleFrame = ttk.Frame(root)
 title_label = ttk.Label(root, text="See What The World Thinks", font=("Helvetica", 20))
 title_label.pack(pady=20)
 titleFrame.pack(padx=100, pady=(0, 10))
 
-# 創建下半部分的圖形顯示區域
+# Plot frame
 plot_frame = tk.Frame(root)
 plot_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-# 創建下拉式選單
+# Create a dictionary for column alternatives
+column_alternatives = {
+    'Life Ladder': "Overall Happiness",
+    'Log GDP Per Capita': "Economic Strength",
+    'Social Support': "Support Systems",
+    'Healthy Life Expectancy At Birth': "Health Expectancy",
+    'Freedom To Make Life Choices': "Personal Freedom",
+    'Generosity': "Generosity Levels",
+    'Perceptions Of Corruption': "Corruption Perception",
+    'Positive Affect': "Positive Emotions",
+    'Negative Affect': "Negative Emotions",
+    'Confidence In National Government': "Government Trust"
+}
+
+# Reverse dictionary for lookup
+alternative_to_column = {v: k for k, v in column_alternatives.items()}
+
+# Create a combobox for selecting columns
 selected_column = tk.StringVar()
 column_menu = ttk.Combobox(plot_frame, textvariable=selected_column, width=40)
 
-columns = [
-    'Life Ladder', 'Log GDP Per Capita', 'Social Support', 'Healthy Life Expectancy At Birth', 'Freedom To Make Life Choices',
-    'Generosity', 'Perceptions Of Corruption', 'Positive Affect', 'Negative Affect', 'Confidence In National Government'
-]
-
-column_menu['values'] = columns
+# Set combobox values to the alternative texts
+column_menu['values'] = list(column_alternatives.values())
 column_menu.set('Take a Guess')
 column_menu.pack()
 
-# 創建一個畫布以顯示圖形
+# Create a figure for the plot
 fig = Figure(figsize=(6, 6), dpi=100)
 ax = fig.add_subplot(111)
 canvas = FigureCanvasTkAgg(fig, master=plot_frame)
@@ -69,7 +81,7 @@ canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
 sns.set(style="whitegrid")
 
-# 消息字典 (可單獨編輯)
+# Messages dictionary
 messages = {
     'Life Ladder': "Alright 🙂\n\n🇺🇸🇨🇦🇦🇺🇳🇿\nseem the HAPPIEST!\n\nFollowed by Western Europe 🌍 & Latin America & Carribean 🌎",
     'Log GDP Per Capita': "💰\n  MONEY isn't everything!\n\n Though GDP is reportedly #1 factor here for happiness - \n\nLatin America & Carribean here surely shows that you don't need to be the richest to be happy. 🤠",
@@ -83,23 +95,25 @@ messages = {
     'Confidence In National Government': "📡\n POLITICS\n\nInterestingly, Confidence In National Government doesn't really reflect on how happy people are."
 }
 
-# 更新圖形
+# Update plot function
 def update_plot(event):
-    selected_col = selected_column.get()
-    if selected_col in data.columns:
-        ax.clear()  # 清除以前的圖形
-        sns.scatterplot(data=data, x=selected_col, y='Life Ladder', hue='Region', palette='pastel', ax=ax)
-        ax.set_title(f'Life Ladder vs {selected_col}')
-        ax.set_xlabel(selected_col)
-        ax.set_ylabel('Life Ladder')
-        ax.legend(loc='upper left', fontsize='8')
-        canvas.draw()  # 更新畫布
+    alt_selected_col = selected_column.get()
+    if alt_selected_col in alternative_to_column:
+        selected_col = alternative_to_column[alt_selected_col]
+        if selected_col in data.columns:
+            ax.clear()  # Clear previous plot
+            sns.scatterplot(data=data, x=selected_col, y='Life Ladder', hue='Region', palette='pastel', ax=ax)
+            ax.set_title(f'Life Ladder vs {alt_selected_col}')
+            ax.set_xlabel(alt_selected_col)
+            ax.set_ylabel('Life Ladder')
+            ax.legend(loc='upper left', fontsize='8')
+            canvas.draw()  # Update canvas
 
-        # 顯示對應的消息框
-        messagebox.showinfo("Happiness Message", messages[selected_col], icon="warning")
+            # Show corresponding message box
+            messagebox.showinfo("Happiness Message", messages[selected_col], icon="warning")
 
-# 綁定選擇事件
+# Bind combobox selection event
 column_menu.bind("<<ComboboxSelected>>", update_plot)
 
-# 運行 Tkinter 主循環
+# Run the Tkinter main loop
 root.mainloop()
